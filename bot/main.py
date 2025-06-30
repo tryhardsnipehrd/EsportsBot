@@ -41,17 +41,47 @@ async def on_message_delete( message ):
     # Again, need global to fix scoping
     global log_channel
 
-    print(f"Message deleted: {message.content}")
+#    print(f"Message deleted: {message.content}")
+    message_author = message.author
+    author_name = message_author.nick if message_author.nick else message_author.name
+    author_id = message_author.id
+    author_pfp = message_author.display_avatar.url
+
 
     # Build our embed, using red as our color
     DeletedEmbed = discord.Embed(
-        title=message.author.name,
+        title=f"{author_name} - {author_id}",
         description=message.content,
         color=0xFF0000
         )
-
+    DeletedEmbed.set_thumbnail(url=author_pfp)
     # Send the embed. Uses await to not be blocking
     await log_channel.send(embed=DeletedEmbed)
 
+@client.event
+async def on_message_edit( old_message, new_message ):
+    global log_channel
+
+    # We need to exit out if this wasn't a direct edit
+    # We can check this by seeing if they two messages are the exact same content.
+    if old_message.content == new_message.content:
+        return
+    
+    message_author = old_message.author
+    author_name = message_author.nick if message_author.nick else message_author.name
+    author_id = message_author.id
+    author_pfp = message_author.display_avatar.url
+
+
+    # Create our embed
+    EditedEmbed = discord.Embed(
+        title=f"{author_name} - <{author_id}>",
+        color=0xF9B52C,
+        description=f"**Old:** {old_message.content}\n\n**+New:** {new_message.content}"
+    )
+    EditedEmbed.set_thumbnail(url=author_pfp)
+
+    await log_channel.send(embed=EditedEmbed)
+    
 
 client.run(CLIENT_TOKEN)
