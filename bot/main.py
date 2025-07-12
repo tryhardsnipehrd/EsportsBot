@@ -4,6 +4,7 @@ import os
 
 
 CLIENT_TOKEN = os.getenv("DISCORD_TOKEN")
+REACT_MESSAGE_ID = int(os.getenv("REACT_MESSAGE_ID"))
 # This is where the deletions and other logs will be sent
 LOG_CHANNEL_ID = 1385096206140838020
 
@@ -25,7 +26,7 @@ client = discord.Client(intents=intents)
 log_channel = None
 
 
-@client.eventn
+@client.event
 async def on_ready():
     # This needs to be global to fix scoping issues
     global log_channel
@@ -84,6 +85,22 @@ async def on_message_edit( old_message, new_message ):
     EditedEmbed.set_thumbnail(url=author_pfp)
 
     await log_channel.send(embed=EditedEmbed)
-    
+
+@client.event
+async def on_raw_reaction_add( payload ):
+    if payload.message_id == REACT_MESSAGE_ID:
+        emoji = payload.emoji
+        if emoji.url == "":
+            parsed_name = ord(emoji.name)
+        else:
+            parsed_name = emoji.name
+
+        match parsed_name:
+            case "RL":
+                print("Ball Chaser")
+            case "catface":
+                print("Here Kitty Kitty")
+            case 129370:
+                print("Egg")
 
 client.run(CLIENT_TOKEN)
