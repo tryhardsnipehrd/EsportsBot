@@ -1,5 +1,7 @@
 import discord
+from dotenv import load_dotenv; load_dotenv()
 import os
+
 
 CLIENT_TOKEN = os.getenv("DISCORD_TOKEN")
 # This is where the deletions and other logs will be sent
@@ -23,7 +25,7 @@ client = discord.Client(intents=intents)
 log_channel = None
 
 
-@client.event
+@client.eventn
 async def on_ready():
     # This needs to be global to fix scoping issues
     global log_channel
