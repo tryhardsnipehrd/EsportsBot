@@ -1,6 +1,7 @@
 import aiosqlite as sql
 import asyncio
 import discord
+from discord import app_commands
 from dotenv import load_dotenv; load_dotenv()
 import os
 
@@ -8,13 +9,16 @@ import os
 CLIENT_TOKEN = os.getenv("DISCORD_TOKEN")
 DATABASE_PATH = os.getenv("DATABASE_PATH")
 REACT_MESSAGE_ID = int(os.getenv("REACT_MESSAGE_ID"))
-# This is where the deletions and other logs will be sent
-LOG_CHANNEL_ID = 1385096206140838020
 
 # Verify that we actually got a bot token
 if CLIENT_TOKEN == None:
     print("Please provide the bot token with the `DISCORD_TOKEN` variable")
     exit()
+
+# This is where the deletions and other logs will be sent
+LOG_CHANNEL_ID = None
+# This ensures we have a variable to log to
+log_channel = None
 
 intents = discord.Intents.default()
 # We need to be able to *read* messages
@@ -22,46 +26,36 @@ intents.message_content = True
 # As well as get the messages from id (for logs)
 intents.messages = True
 
-
 client = discord.Client(intents=intents)
-
-# This ensures we have a variable to log to
-log_channel = None
 
 
 # Let's connect to the database, and ensure tables are setup
 async def setup_database():
     async with sql.connect(DATABASE_PATH) as db:
-        await db.execute("CREATE TABLE IF NOT EXISTS reacts(emote, role);")
-        await db.execute("CREATE TABLE IF NOT EXISTS settings(name, data);")
+        await db.execute("CREATE TABLE IF NOT EXISTS reacts(emote text, role int);")
+        await db.execute("CREATE TABLE IF NOT EXISTS settings(name text, data text);")
         await db.commit()
 
 # DEBUG
-async def debug_write():
-    async with sql.connect(DATABASE_PATH) as db:
-        try:
-            await db.execute("PRAGMA journal_mode=DELETE")
-            await db.execute("insert into test values ('testing write')")
-            await db.commit()
-            await db.close()
-        except Exception as e:
-            print("SHIT BROKE")
-
-async def debug_write_again():
-    async with sql.connect(DATABASE_PATH) as db:
-        await db.execute("insert into test values ('maybe this works')")
-        await db.commit()
-        await db.close()
-
-async def debug_database():
+async def debug_database(table):
     async with sql.connect(DATABASE_PATH) as db:
         db.row_factory = sql.Row
-        async with db.execute("SELECT * FROM test") as cursor:
-            async for row in cursor:
-                print(row["data"])
+        async with db.execute(f"SELECT * FROM {table}") as cursor:
+            for row in await cursor.fetchall():
+                for item in row:
+                    print(f"{item} | ", end="")
+                print()
 
 
 
+async def get_settings():
+    async with sql.connect(DATABASE_PATH) as db:
+        # Anything we need immediately will need to be specified here.
+        global LOG_CHANNEL_ID
+        result = await db.execute("SELECT * FROM settings WHERE name='log_channel'")
+        result = await result.fetchone()
+        LOG_CHANNEL_ID = int(result[1])
+        print(f"Log Channel ID Retrieved from DB: {LOG_CHANNEL_ID}")
     
 @client.event
 async def on_ready():
@@ -141,12 +135,11 @@ async def on_raw_reaction_add( payload ):
                 print("Egg")
 
 
-
-
 # Start
 if __name__ == "__main__":
-    asyncio.run(debug_write())
-    asyncio.run(debug_write_again())
-    asyncio.run(debug_database())
+    # Setup the database to ensure it exists and is ready
+    asyncio.run(setup_database())
+    asyncio.run(get_settings())
+
 
     client.run(CLIENT_TOKEN)
