@@ -1,9 +1,11 @@
+import aiosqlite as sql
 import discord
 from dotenv import load_dotenv; load_dotenv()
 import os
 
 
 CLIENT_TOKEN = os.getenv("DISCORD_TOKEN")
+DATABASE_PATH = os.getenv("DATABASE_PATH")
 REACT_MESSAGE_ID = int(os.getenv("REACT_MESSAGE_ID"))
 # This is where the deletions and other logs will be sent
 LOG_CHANNEL_ID = 1385096206140838020
@@ -26,6 +28,15 @@ client = discord.Client(intents=intents)
 log_channel = None
 
 
+# Let's connect to the database, and ensure tables are setup
+async def setup_database():
+    async with sql.connect(DATABASE_PATH) as db:
+        await db.execute("CREATE TABLE IF NOT EXISTS reacts(emote, role)")
+        await db.execute("CREATE TABLE IF NOT EXISTS settings(name, data)")
+
+# Yes, this is not awaited, and python will cry. But it works anyway :)
+setup_database()
+    
 @client.event
 async def on_ready():
     # This needs to be global to fix scoping issues

@@ -198,3 +198,6 @@ cython_debug/
 \#*\#
 .\#*
 *~
+
+# Don't wanna add the database...
+*.db
