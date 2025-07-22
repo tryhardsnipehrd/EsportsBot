@@ -1,4 +1,5 @@
 import aiosqlite as sql
+import asyncio
 import discord
 from dotenv import load_dotenv; load_dotenv()
 import os
@@ -31,11 +32,36 @@ log_channel = None
 # Let's connect to the database, and ensure tables are setup
 async def setup_database():
     async with sql.connect(DATABASE_PATH) as db:
-        await db.execute("CREATE TABLE IF NOT EXISTS reacts(emote, role)")
-        await db.execute("CREATE TABLE IF NOT EXISTS settings(name, data)")
+        await db.execute("CREATE TABLE IF NOT EXISTS reacts(emote, role);")
+        await db.execute("CREATE TABLE IF NOT EXISTS settings(name, data);")
+        await db.commit()
 
-# Yes, this is not awaited, and python will cry. But it works anyway :)
-setup_database()
+# DEBUG
+async def debug_write():
+    async with sql.connect(DATABASE_PATH) as db:
+        try:
+            await db.execute("PRAGMA journal_mode=DELETE")
+            await db.execute("insert into test values ('testing write')")
+            await db.commit()
+            await db.close()
+        except Exception as e:
+            print("SHIT BROKE")
+
+async def debug_write_again():
+    async with sql.connect(DATABASE_PATH) as db:
+        await db.execute("insert into test values ('maybe this works')")
+        await db.commit()
+        await db.close()
+
+async def debug_database():
+    async with sql.connect(DATABASE_PATH) as db:
+        db.row_factory = sql.Row
+        async with db.execute("SELECT * FROM test") as cursor:
+            async for row in cursor:
+                print(row["data"])
+
+
+
     
 @client.event
 async def on_ready():
@@ -114,4 +140,13 @@ async def on_raw_reaction_add( payload ):
             case 129370:
                 print("Egg")
 
-client.run(CLIENT_TOKEN)
+
+
+
+# Start
+if __name__ == "__main__":
+    asyncio.run(debug_write())
+    asyncio.run(debug_write_again())
+    asyncio.run(debug_database())
+
+    client.run(CLIENT_TOKEN)
