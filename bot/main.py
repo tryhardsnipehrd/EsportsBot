@@ -1,3 +1,4 @@
+
 import aiosqlite as sql
 import asyncio
 import discord
@@ -129,7 +130,7 @@ async def on_message_edit( old_message, new_message ):
     EditedEmbed = discord.Embed(
         title=f"{author_name} - <{author_id}>",
         color=0xF9B52C,
-        descripppption=f"**Old:** {old_message.content}\n\n**+New:** {new_message.content}"
+        description=f"**Old:** {old_message.content}\n\n**+New:** {new_message.content}"
     )
     EditedEmbed.set_thumbnail(url=author_pfp)
 
@@ -174,7 +175,7 @@ async def settings_command(interaction, setting: str, value: str):
     description="Add a new react, or edit an existing one (PRIVILEGED)",
     guild=discord.Object(id=GUILD_ID)
 )  
-async def edit_react_command(interaction, emote: discord.Emoji, role: discord.Role):
+async def edit_react_command(interaction, emote: str, role: discord.Role):
     await interaction.response.send_message("IT WORKED")
 
 
